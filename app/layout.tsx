@@ -7,9 +7,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "RPAL IDE - Online RPAL Programming Environment",
-  description: "A comprehensive online IDE for the RPAL programming language with AST and ST visualization",
-    generator: 'v0.dev'
+  title: "RPAL Interpreter - Online RPAL Programming Environment",
+  description: "A comprehensive online interpreter for the RPAL programming language with AST and ST visualization",
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
