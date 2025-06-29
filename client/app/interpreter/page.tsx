@@ -1,18 +1,28 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Moon, Sun, Play, Trash2, Code, GitBranch, ArrowLeft } from "lucide-react"
-import { useTheme } from "next-themes"
-import Link from "next/link"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Moon,
+  Sun,
+  Play,
+  Trash2,
+  Code,
+  GitBranch,
+  ArrowLeft,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import Link from "next/link";
+import { changeTree } from "@/utils/convertTree";
+import VisualTree from "@/components/tree";
 
 // Mock RPAL interpreter functions
 const parseRPAL = (code: string) => {
-  if (!code.trim()) return null
+  if (!code.trim()) return null;
 
   return {
     type: "Program",
@@ -33,11 +43,11 @@ const parseRPAL = (code: string) => {
         right: { type: "Number", value: "3" },
       },
     },
-  }
-}
+  };
+};
 
 const standardizeTree = (ast: any) => {
-  if (!ast) return null
+  if (!ast) return null;
 
   return {
     type: "StandardizedProgram",
@@ -60,121 +70,165 @@ const standardizeTree = (ast: any) => {
       },
       right: { type: "Number", value: "5" },
     },
-  }
-}
+  };
+};
 
 const executeRPAL = (code: string) => {
-  if (!code.trim()) return ""
+  if (!code.trim()) return "";
 
   if (code.includes("let x = 5 in x + 3")) {
-    return "8"
+    return "8";
   } else if (code.includes("1 + 2")) {
-    return "3"
+    return "3";
   } else if (code.includes("Print")) {
-    return "Hello, RPAL!"
+    return "Hello, RPAL!";
   } else if (code.includes("factorial")) {
-    return "120"
+    return "120";
   }
 
-  return "Program executed successfully"
-}
+  return "Program executed successfully";
+};
 
 const formatTree = (tree: any, indent = 0): string => {
-  if (!tree) return ""
+  if (!tree) return "";
 
-  const spaces = "  ".repeat(indent)
-  let result = ""
+  const spaces = "  ".repeat(indent);
+  let result = "";
 
   if (typeof tree === "object") {
     if (tree.type) {
-      result += `${spaces}${tree.type}`
-      if (tree.name) result += `: ${tree.name}`
-      if (tree.value) result += `: ${tree.value}`
-      if (tree.operator) result += `: ${tree.operator}`
-      if (tree.parameter) result += `: ${tree.parameter}`
-      result += "\n"
+      result += `${spaces}${tree.type}`;
+      if (tree.name) result += `: ${tree.name}`;
+      if (tree.value) result += `: ${tree.value}`;
+      if (tree.operator) result += `: ${tree.operator}`;
+      if (tree.parameter) result += `: ${tree.parameter}`;
+      result += "\n";
 
       Object.keys(tree).forEach((key) => {
-        if (key !== "type" && key !== "name" && key !== "value" && key !== "operator" && key !== "parameter") {
+        if (
+          key !== "type" &&
+          key !== "name" &&
+          key !== "value" &&
+          key !== "operator" &&
+          key !== "parameter"
+        ) {
           if (Array.isArray(tree[key])) {
             tree[key].forEach((item: any) => {
-              result += formatTree(item, indent + 1)
-            })
+              result += formatTree(item, indent + 1);
+            });
           } else if (typeof tree[key] === "object") {
-            result += formatTree(tree[key], indent + 1)
+            result += formatTree(tree[key], indent + 1);
           }
         }
-      })
+      });
     }
   }
 
-  return result
-}
+  return result;
+};
 
 export default function RPALInterpreter() {
-  const [code, setCode] = useState("")
-  const [output, setOutput] = useState("")
-  const [ast, setAst] = useState<any>(null)
-  const [st, setSt] = useState<any>(null)
-  const [showAst, setShowAst] = useState(false)
-  const [showSt, setShowSt] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [code, setCode] = useState("");
+  const [output, setOutput] = useState("");
+  const [ast, setAst] = useState<any>(null);
+  const [st, setSt] = useState<any>(null);
+  const [showAst, setShowAst] = useState(false);
+  const [showSt, setShowSt] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  const api_url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Load code from localStorage on component mount
   useEffect(() => {
-    const savedCode = localStorage.getItem("rpal-code")
+    const savedCode = localStorage.getItem("rpal-code");
     if (savedCode) {
-      setCode(savedCode)
+      setCode(savedCode);
     }
-  }, [])
+  }, []);
 
   // Save code to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("rpal-code", code)
-  }, [code])
+    localStorage.setItem("rpal-code", code);
+  }, [code]);
 
   const runProgram = async () => {
-    setIsRunning(true)
+    setIsRunning(true);
 
     // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
-      const astResult = parseRPAL(code)
-      const stResult = standardizeTree(astResult)
-      const executionResult = executeRPAL(code)
+      const astResult = parseRPAL(code);
+      const stResult = standardizeTree(astResult);
+      const executionResult = executeRPAL(code);
 
-      setAst(astResult)
-      setSt(stResult)
-      setOutput(executionResult)
+      setAst(astResult);
+      setSt(stResult);
+      setOutput(executionResult);
     } catch (error) {
-      setOutput(`Error: ${error}`)
+      setOutput(`Error: ${error}`);
     }
 
-    setIsRunning(false)
-  }
+    setIsRunning(false);
+  };
 
   const clearEditor = () => {
-    setCode("")
-    setOutput("")
-    setAst(null)
-    setSt(null)
-  }
+    setCode("");
+    setOutput("");
+    setAst(null);
+    setSt(null);
+  };
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   if (!mounted) {
-    return null
+    return null;
   }
 
+  const sendCodeToServer = async () => {
+    try {
+      setIsRunning(true);
+      const response = await fetch(`${api_url}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: code, ast: showAst, st: showSt }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to run code on server");
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setOutput(data.result);
+      if (data.ast) {
+        setAst(data.ast);
+        changeTree(ast);
+      }
+      if (data.st) {
+        setSt(data.st);
+        changeTree(st);
+      }
+    } catch (error) {
+      setOutput(
+        `Error: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      setIsRunning(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -194,13 +248,24 @@ export default function RPALInterpreter() {
                 </div>
                 <div>
                   <h1 className="text-xl font-semibold">RPAL Interpreter</h1>
-                  <p className="text-sm text-muted-foreground">Interactive Environment</p>
+                  <p className="text-sm text-muted-foreground">
+                    Interactive Environment
+                  </p>
                 </div>
               </div>
             </div>
 
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
@@ -233,12 +298,20 @@ Print 'Hello, RPAL!'"
 
               {/* Control Buttons */}
               <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={runProgram} disabled={isRunning} className="flex items-center gap-2">
+                <Button
+                  onClick={sendCodeToServer}
+                  disabled={isRunning}
+                  className="flex items-center gap-2"
+                >
                   <Play className="h-4 w-4" />
                   {isRunning ? "Running..." : "Run"}
                 </Button>
 
-                <Button variant="outline" onClick={clearEditor} className="flex items-center gap-2 bg-transparent">
+                <Button
+                  variant="outline"
+                  onClick={clearEditor}
+                  className="flex items-center gap-2 bg-transparent"
+                >
                   <Trash2 className="h-4 w-4" />
                   Clear
                 </Button>
@@ -247,15 +320,31 @@ Print 'Hello, RPAL!'"
 
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="show-ast" checked={showAst} onCheckedChange={setShowAst} />
-                    <label htmlFor="show-ast" className="text-sm font-medium cursor-pointer">
+                    <Checkbox
+                      id="show-ast"
+                      checked={showAst}
+                      onCheckedChange={(checked) =>
+                        setShowAst(checked === true)
+                      }
+                    />
+                    <label
+                      htmlFor="show-ast"
+                      className="text-sm font-medium cursor-pointer"
+                    >
                       Show AST
                     </label>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="show-st" checked={showSt} onCheckedChange={setShowSt} />
-                    <label htmlFor="show-st" className="text-sm font-medium cursor-pointer">
+                    <Checkbox
+                      id="show-st"
+                      checked={showSt}
+                      onCheckedChange={(checked) => setShowSt(checked === true)}
+                    />
+                    <label
+                      htmlFor="show-st"
+                      className="text-sm font-medium cursor-pointer"
+                    >
                       Show ST
                     </label>
                   </div>
@@ -290,7 +379,11 @@ Print 'Hello, RPAL!'"
               </CardHeader>
               <CardContent>
                 <div className="bg-muted p-4 rounded-md min-h-[200px] font-mono text-sm whitespace-pre-wrap overflow-auto">
-                  {ast ? formatTree(ast) : "No AST generated. Run your program first."}
+                  {ast ? (
+                    <VisualTree node={changeTree(ast)} />
+                  ) : (
+                    "No AST generated. Run your program first."
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -307,7 +400,11 @@ Print 'Hello, RPAL!'"
               </CardHeader>
               <CardContent>
                 <div className="bg-muted p-4 rounded-md min-h-[200px] font-mono text-sm whitespace-pre-wrap overflow-auto">
-                  {st ? formatTree(st) : "No ST generated. Run your program first."}
+                  {st ? (
+                    <VisualTree node={changeTree(st)} />
+                  ) : (
+                    "No ST generated. Run your program first."
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -324,23 +421,33 @@ Print 'Hello, RPAL!'"
               <div>
                 <h4 className="font-medium mb-2">Variables & Functions</h4>
                 <div className="space-y-1">
-                  <div className="bg-muted p-2 rounded font-mono">let x = 5</div>
-                  <div className="bg-muted p-2 rounded font-mono">fn x =&gt; x + 1</div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    let x = 5
+                  </div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    fn x =&gt; x + 1
+                  </div>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-medium mb-2">Operations</h4>
                 <div className="space-y-1">
-                  <div className="bg-muted p-2 rounded font-mono">+, -, *, /</div>
-                  <div className="bg-muted p-2 rounded font-mono">eq, ne, ls, gr</div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    +, -, *, /
+                  </div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    eq, ne, ls, gr
+                  </div>
                 </div>
               </div>
 
               <div>
                 <h4 className="font-medium mb-2">Control Flow</h4>
                 <div className="space-y-1">
-                  <div className="bg-muted p-2 rounded font-mono">x -&gt; y | z</div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    x -&gt; y | z
+                  </div>
                   <div className="bg-muted p-2 rounded font-mono">or, &</div>
                 </div>
               </div>
@@ -348,7 +455,9 @@ Print 'Hello, RPAL!'"
               <div>
                 <h4 className="font-medium mb-2">Data Types</h4>
                 <div className="space-y-1">
-                  <div className="bg-muted p-2 rounded font-mono">(1, 2, 3)</div>
+                  <div className="bg-muted p-2 rounded font-mono">
+                    (1, 2, 3)
+                  </div>
                   <div className="bg-muted p-2 rounded font-mono">'string'</div>
                 </div>
               </div>
@@ -357,5 +466,5 @@ Print 'Hello, RPAL!'"
         </Card>
       </div>
     </div>
-  )
+  );
 }
