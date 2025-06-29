@@ -33,6 +33,10 @@ async def root():
 async def health_check():
     return {"status": "ok", "message": "Server is running"}
 
+@app.head("/health")
+async def health_check_head():
+    return {"status": "ok", "message": "Server is running"}
+
 @app.post("/")
 async def interpret_code(code: CodeInput):
     print(f"Received code: {code.code}")
