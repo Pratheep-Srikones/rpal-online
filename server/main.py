@@ -13,6 +13,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://rpal-online.vercel.app",
+    "https://rpal-online.vercel.app/interpreter"
 ]
 
 app.add_middleware(
