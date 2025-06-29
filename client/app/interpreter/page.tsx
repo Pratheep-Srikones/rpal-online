@@ -425,7 +425,7 @@ Print 'Hello, RPAL!'"
                     let x = 5
                   </div>
                   <div className="bg-muted p-2 rounded font-mono">
-                    fn x =&gt; x + 1
+                    let fn x = x + 1
                   </div>
                 </div>
               </div>
