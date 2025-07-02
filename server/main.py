@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from Interpreter.myrpal import interpret
+from Interpreter.myrpal import execute_with_timeout as interpret
 from fastapi.middleware.cors import CORSMiddleware
 
+TIM_LIMIT = 10  # seconds
 class CodeInput(BaseModel):
     code: str
     ast : bool = False
@@ -41,7 +42,7 @@ async def health_check_head():
 async def interpret_code(code: CodeInput):
     print(f"Received code: {code.code}")
     try:
-        result = interpret(code.code, sendAST=code.ast, sendST=code.st)
+        result = interpret(code.code, sendAST=code.ast, sendST=code.st, timeout=TIM_LIMIT)
         return {"result": result.get("resOut", None),
                 "ast": result.get("resAST", None),
                 "st": result.get("resST", None)}

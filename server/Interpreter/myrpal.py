@@ -5,6 +5,8 @@ from Interpreter.CSE.generateCS import CSGenerator
 from Interpreter.Environment.Environment import Environment
 from Interpreter.CSE.CSEMachine import CSEMachine
 import copy
+import multiprocessing
+import time
 
 # Predefined primitive environment variables for the interpreter
 PRIMITIVE_ENVIRONMENT_VARIABLES = {
@@ -48,7 +50,22 @@ Behavior:
     - Handles errors gracefully.
 """
 
-def interpret(code,sendAST=False, sendST=False):
+def execute_with_timeout(code,sendAST=False, sendST=False, timeout=10):
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+
+    process = multiprocessing.Process(target=interpret, args=(code, return_dict, sendAST, sendST))
+    process.start()
+    process.join(timeout)
+
+    if process.is_alive():
+        process.terminate()
+        process.join()
+        raise TimeoutError("The interpretation process timed out.")
+
+    return return_dict.get("result", None)
+
+def interpret(code, return_dict,sendAST=False, sendST=False):
     """
     Main function to handle command-line arguments, file reading, tokenization,
     parsing, AST standardization, control structure generation, and interpretation.
@@ -91,7 +108,7 @@ def interpret(code,sendAST=False, sendST=False):
         machine = CSEMachine(controlStructures, primitiveEnvironment)
         output = machine.interpret()
         res["resOut"] = output
-        return res
+        return_dict["result"] = res
 
     except Exception as e:
         raise Exception(e) from e
